@@ -10,14 +10,6 @@ import time
 
 app = Flask(__name__)
 
-# Configuration
-ALLOWED_MODELS = ["tts-1", "tts-1-hd"]
-VOICE_OPTIONS = [
-    "af_bella", "af_nicole", "af", "af_sarah", "af_sky",
-    "am_adam", "am_michael", "bf_emma", "bf_isabella",
-    "bm_george", "bm_lewis"
-]
-
 def stream_audio(text: str, voice: str, speed: float = 1.0):
     """Stream TTS audio using sounddevice"""
     sample_rate = 24000  # Known sample rate
@@ -60,11 +52,9 @@ def stream_audio(text: str, voice: str, speed: float = 1.0):
                 if not audio_started:
                     audio_started = True
                     first_chunk_time = time.time()
-
                 # Convert chunk to numpy array and play
                 audio_chunk = np.frombuffer(chunk, dtype=np.int16)
                 stream.write(audio_chunk)
-                
                 # Keep track of the audio data
                 all_audio_data.extend(chunk)
                 chunk_count += 1
@@ -82,21 +72,12 @@ def stream_audio(text: str, voice: str, speed: float = 1.0):
 def generate_speech():
     try:
         data = request.get_json()
-
-        # Validate required fields
-        if not all(key in data for key in ['model', 'input', 'voice']):
+        
+        # Validate only required fields
+        if not all(key in data for key in ['input', 'voice']):
             return jsonify({
                 'error': {
-                    'message': 'Missing required fields. Required: model, input, voice',
-                    'type': 'invalid_request_error'
-                }
-            }), 400
-
-        # Validate voice
-        if data['voice'] not in VOICE_OPTIONS:
-            return jsonify({
-                'error': {
-                    'message': f'Invalid voice. Allowed voices: {", ".join(VOICE_OPTIONS)}',
+                    'message': 'Missing required fields. Required: input, voice',
                     'type': 'invalid_request_error'
                 }
             }), 400
